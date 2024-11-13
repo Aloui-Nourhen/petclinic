@@ -1,39 +1,77 @@
 pipeline {
     agent any
-    tools {
-        maven 'jenkins-maven' // Utilisez le nom exact de votre installation Maven dans Jenkins
-        jdk 'JDK'          // Assurez-vous que le nom du JDK est correct dans Jenkins
+
+    environment {
+        // Configuration Maven
+        MAVEN_HOME = tool name: 'jenkins-maven', type: 'hudson.tasks.Maven$MavenInstallation'
+        PATH = "${env.PATH};${MAVEN_HOME}\\bin"
     }
+
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/Aloui-Nourhen/petclinic.git' // Remplacez cette URL par celle de votre dépôt
+                // Cloner le dépôt depuis GitHub
+                git url: 'https://github.com/Aloui-Nourhen/petclinic.git', branch: 'master'
             }
         }
+
         stage('Build') {
             steps {
-                sh 'mvn clean install'
+                // Compilation du projet avec Maven
+                script {
+                    if (isUnix()) {
+                        sh "'${MAVEN_HOME}/bin/mvn' clean install"
+                    } else {
+                        bat(/"${MAVEN_HOME}\bin\mvn" clean install/)
+                    }
+                }
             }
         }
+
         stage('Test') {
             steps {
-                sh 'mvn test'
+                // Exécution des tests avec Maven
+                script {
+                    if (isUnix()) {
+                        sh "'${MAVEN_HOME}/bin/mvn' test"
+                    } else {
+                        bat(/"${MAVEN_HOME}\bin\mvn" test/)
+                    }
+                }
             }
         }
+
         stage('Package') {
             steps {
-                sh 'mvn package'
+                // Générer le package
+                script {
+                    if (isUnix()) {
+                        sh "'${MAVEN_HOME}/bin/mvn' package"
+                    } else {
+                        bat(/"${MAVEN_HOME}\bin\mvn" package/)
+                    }
+                }
             }
         }
+
         stage('Deploy') {
             steps {
-                sh 'scp target/petclinic.war user@server:/path/to/deploy'
+                echo 'Déploiement de l’application...'
+                // Ajoutez ici les étapes de déploiement, par exemple, copier le .jar généré vers un serveur
             }
         }
-        stage('Post-build actions') {
-            steps {
-                echo 'Pipeline terminé avec succès'
-            }
+    }
+
+    post {
+        always {
+            echo 'Pipeline terminé.'
+            // Actions à effectuer, quel que soit le résultat, comme la suppression des fichiers temporaires
+        }
+        success {
+            echo 'Pipeline terminé avec succès.'
+        }
+        failure {
+            echo 'Échec du pipeline.'
         }
     }
 }
