@@ -8,7 +8,8 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'mvn -B clean install -U -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true'
+                        // Enlève "nohup" pour rendre la commande compatible Windows
+                        bat 'mvn -B clean install -U -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true'
                     } catch (Exception e) {
                         echo "Build failed due to dependency resolution issues: ${e.message}"
                         error("Stopping pipeline due to dependency issues.")
@@ -21,7 +22,7 @@ pipeline {
                 expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
             }
             steps {
-                sh 'mvn test'
+                bat 'mvn test'
             }
         }
         stage('Package') {
@@ -29,7 +30,7 @@ pipeline {
                 expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
             }
             steps {
-                sh 'mvn package'
+                bat 'mvn package'
             }
         }
         stage('Deploy') {
