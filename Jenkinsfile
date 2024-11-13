@@ -2,8 +2,8 @@ pipeline {
     agent any
     tools {
         // Définir les outils nécessaires (par exemple, Maven, JDK)
-        maven 'Maven 3.6.3'
-        jdk 'JDK 11'
+        maven 'Maven 3.9.9'
+        jdk 'JDK 23'
     }
     stages {
         stage('Checkout') {
