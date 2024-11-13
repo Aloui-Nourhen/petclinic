@@ -1,77 +1,53 @@
 pipeline {
     agent any
-
     environment {
-        // Configuration Maven
-        MAVEN_HOME = tool name: 'jenkins-maven', type: 'hudson.tasks.Maven$MavenInstallation'
-        PATH = "${env.PATH};${MAVEN_HOME}\\bin"
+        MAVEN_OPTS = "-Dmaven.repo.local=.m2/repository"
     }
-
     stages {
-        stage('Checkout') {
-            steps {
-                // Cloner le dépôt depuis GitHub
-                git url: 'https://github.com/Aloui-Nourhen/petclinic.git', branch: 'master'
-            }
-        }
-
         stage('Build') {
             steps {
-                // Compilation du projet avec Maven
                 script {
-                    if (isUnix()) {
-                        sh "'${MAVEN_HOME}/bin/mvn' clean install"
-                    } else {
-                        bat(/"${MAVEN_HOME}\bin\mvn" clean install/)
+                    try {
+                        sh 'mvn -B clean install -U -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true'
+                    } catch (Exception e) {
+                        echo "Build failed due to dependency resolution issues: ${e.message}"
+                        error("Stopping pipeline due to dependency issues.")
                     }
                 }
             }
         }
-
         stage('Test') {
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
             steps {
-                // Exécution des tests avec Maven
-                script {
-                    if (isUnix()) {
-                        sh "'${MAVEN_HOME}/bin/mvn' test"
-                    } else {
-                        bat(/"${MAVEN_HOME}\bin\mvn" test/)
-                    }
-                }
+                sh 'mvn test'
             }
         }
-
         stage('Package') {
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
             steps {
-                // Générer le package
-                script {
-                    if (isUnix()) {
-                        sh "'${MAVEN_HOME}/bin/mvn' package"
-                    } else {
-                        bat(/"${MAVEN_HOME}\bin\mvn" package/)
-                    }
-                }
+                sh 'mvn package'
             }
         }
-
         stage('Deploy') {
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
             steps {
-                echo 'Déploiement de l’application...'
-                // Ajoutez ici les étapes de déploiement, par exemple, copier le .jar généré vers un serveur
+                echo 'Deployment step goes here'
+                // Ajoutez vos étapes de déploiement ici
             }
         }
     }
-
     post {
-        always {
-            echo 'Pipeline terminé.'
-            // Actions à effectuer, quel que soit le résultat, comme la suppression des fichiers temporaires
-        }
         success {
-            echo 'Pipeline terminé avec succès.'
+            echo 'Pipeline completed successfully.'
         }
         failure {
-            echo 'Échec du pipeline.'
+            echo 'Pipeline failed.'
         }
     }
 }
