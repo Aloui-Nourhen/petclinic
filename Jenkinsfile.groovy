@@ -8,8 +8,8 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Cloner ou vérifier le code à partir du dépôt Git
-                git 'https://github.com/spring-projects/spring-petclinic.git'
+                // Cloner ou vérifier le code à partir de votre propre dépôt Git
+                git 'https://github.com/Aloui-Nourhen/petclinic.git'  // Remplacez cette URL par celle de votre dépôt
             }
         }
         stage('Build') {
@@ -44,3 +44,4 @@ pipeline {
         }
     }
 }
+
