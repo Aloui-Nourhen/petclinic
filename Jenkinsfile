@@ -1,54 +1,49 @@
 pipeline {
     agent any
-    environment {
-        MAVEN_OPTS = "-Dmaven.repo.local=.m2/repository"
+    
+    tools {
+        // Assurez-vous que 'Maven' est configuré dans les outils Jenkins
+        maven 'jenkins-maven' 
+        // Assurez-vous que 'JDK' est configuré dans les outils Jenkins
+        jdk 'JDK'
     }
+    
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                script {
-                    try {
-                        // Enlève "nohup" pour rendre la commande compatible Windows
-                        bat 'mvn -B clean install -U -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true'
-                    } catch (Exception e) {
-                        echo "Build failed due to dependency resolution issues: ${e.message}"
-                        error("Stopping pipeline due to dependency issues.")
-                    }
-                }
+                // Vérifier que le dépôt Git est cloné correctement
+                git branch: 'main', url: 'https://github.com/Aloui-Nourhen/petclinic.git'
             }
         }
-        stage('Test') {
-            when {
-                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
-            }
+        
+        stage('Build') {
             steps {
+                // Compiler le projet avec Maven
+                bat 'mvn clean install'
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                // Exécuter les tests avec Maven
                 bat 'mvn test'
             }
         }
+        
         stage('Package') {
-            when {
-                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
-            }
             steps {
+                // Créer un fichier JAR ou WAR pour l'application
                 bat 'mvn package'
             }
         }
-        stage('Deploy') {
-            when {
-                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
-            }
-            steps {
-                echo 'Deployment step goes here'
-                // Ajoutez vos étapes de déploiement ici
-            }
-        }
     }
+    
     post {
         success {
-            echo 'Pipeline completed successfully.'
+            echo 'Le pipeline a réussi !'
         }
         failure {
-            echo 'Pipeline failed.'
+            echo 'Le pipeline a échoué.'
         }
     }
 }
